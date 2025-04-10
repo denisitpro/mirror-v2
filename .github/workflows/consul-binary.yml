@@ -1,0 +1,41 @@
+name: publish consul
+
+on:
+  push:
+    paths:
+#      - '**/*'  # only debug
+      - consul/version.txt
+
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        mirror_folder: ['consul']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: vars
+        run: |
+          cd ${{ matrix.mirror_folder }}
+          echo "VERSION=$(cat version.txt)"
+          echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      - name: Download Consul binary
+        run: |
+          curl -fL "https://releases.hashicorp.com/consul/${{ env.VERSION }}/consul_${{ env.VERSION }}_linux_amd64.zip" -o "consul_${{ env.VERSION }}_linux_amd64.zip"
+
+      - name: Upload Consul to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "consul-${{ env.VERSION }}"
+          name: "Consul ${{ env.VERSION }}"
+          files: "consul_${{ env.VERSION }}_linux_amd64.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
