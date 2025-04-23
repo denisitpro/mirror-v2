@@ -1,0 +1,41 @@
+name: publish consul
+
+on:
+  push:
+    paths:
+#      - '**/*'  # only debug
+      - elastic-agent/version.txt
+
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        mirror_folder: ['elastic-agent']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: vars
+        run: |
+          cd ${{ matrix.mirror_folder }}
+          echo "VERSION=$(cat version.txt)"
+          echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      - name: Download  binary
+        run: |
+          curl -fL "https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-${{ env.VERSION }}-linux-x86_64.tar.gz" -o "elastic-agent_${{ env.VERSION }}-linux-x86_64.tar.gz"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "elastic-agent-${{ env.VERSION }}"
+          name: "elastic-agent ${{ env.VERSION }}"
+          files: "elastic-agent_${{ env.VERSION }}-linux-x86_64.tar.gz"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
