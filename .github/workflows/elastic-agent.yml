@@ -1,4 +1,4 @@
-name: publish consul
+name: publish elastic-agent
 
 on:
   push:
